@@ -84,12 +84,11 @@ public class MainWindow {
 			config.setDelay(((Number) spDelay.getValue()).intValue());
 			config.setTimeout(((Number) spTimeout.getValue()).intValue());
 			config.setDownloadPath(Paths.get(taDownloadPath.getText()));
-			config.store();
 		}
 	};
 
 	public MainWindow() {
-		config = Config.create();
+		config = new Config();
 	}
 
 	public Container getMainComponent() {

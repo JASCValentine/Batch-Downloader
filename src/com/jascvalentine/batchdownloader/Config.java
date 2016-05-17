@@ -1,17 +1,10 @@
 package com.jascvalentine.batchdownloader;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.file.Files;
-import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Properties;
+import java.util.prefs.Preferences;
 
 public class Config {
-	private Properties properties;
-	
 	private static final String TIMEOUT_KEY = "timeout";
 	private static final String DELAY_KEY = "delay";
 	private static final String DOWNLOAD_PATH_KEY = "downloadPath";
@@ -20,44 +13,11 @@ public class Config {
 	public static final int DEFAULT_DELAY = 1000;
 	public static final Path DEFAULT_DOWNLOAD_PATH = Paths.get(
 			System.getProperty("user.home", "."), "Downloads");
-	
-	public static final Path DEFAULT_CONFIG_PATH = Paths.get(".", "config.properties");
 
-	public static Config create() {
-		Path configPath = DEFAULT_CONFIG_PATH;
-		if (Files.exists(configPath)) {
-			return new Config(configPath);
-		} else {
-			return new Config(DEFAULT_TIMEOUT, DEFAULT_DELAY, DEFAULT_DOWNLOAD_PATH);
-		}
-	}
-	
-	protected Config() {
-		properties = new Properties();
-	}
-	
-	public Config(Path configPath) {
-		this();
-		try (InputStream inStream = Files.newInputStream(configPath)) {
-			properties.load(inStream);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
+	private Preferences preferences;
 
-	public Config(int timeout, int delay, Path downloadPath) {
-		this();
-		properties.setProperty(TIMEOUT_KEY, Integer.toString(timeout));
-		properties.setProperty(DELAY_KEY, Integer.toString(delay));
-		properties.setProperty(DOWNLOAD_PATH_KEY, downloadPath.toString());
-	}
-	
-	public void store() {
-		try (OutputStream out = Files.newOutputStream(DEFAULT_CONFIG_PATH)) {
-			properties.store(out, null);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+	public Config() {
+		preferences = Preferences.userNodeForPackage(getClass());
 	}
 
 	/**
@@ -66,7 +26,7 @@ public class Config {
 	 * @return
 	 */
 	public int getTimeout() {
-		return getIntegerProperty(TIMEOUT_KEY, DEFAULT_TIMEOUT);
+		return preferences.getInt(TIMEOUT_KEY, DEFAULT_TIMEOUT);
 	}
 
 	/**
@@ -75,7 +35,7 @@ public class Config {
 	 * @return
 	 */
 	public int getDelay() {
-		return getIntegerProperty(DELAY_KEY, DEFAULT_DELAY);
+		return preferences.getInt(DELAY_KEY, DEFAULT_DELAY);
 	}
 
 	/**
@@ -84,38 +44,19 @@ public class Config {
 	 * @return
 	 */
 	public Path getDownloadPath() {
-		String value = properties.getProperty(DOWNLOAD_PATH_KEY);
-		if (value == null)
-			return DEFAULT_DOWNLOAD_PATH;
-
-		try {
-			return Paths.get(value);
-		} catch (InvalidPathException e) {
-			return DEFAULT_DOWNLOAD_PATH;
-		}
+		String path = preferences.get(DOWNLOAD_PATH_KEY, null);
+		return path != null ? Paths.get(path) : DEFAULT_DOWNLOAD_PATH;
 	}
 
-	protected int getIntegerProperty(String key, int defaultValue) {
-		String value = properties.getProperty(key);
-		if (key == null)
-			return defaultValue;
-
-		try {
-			return Integer.parseInt(value);
-		} catch (NumberFormatException e) {
-			return defaultValue;
-		}
-	}
-	
 	public void setTimeout(int timeout) {
-		properties.setProperty(TIMEOUT_KEY, Integer.toString(timeout));
+		preferences.putInt(TIMEOUT_KEY, timeout);
 	}
-	
+
 	public void setDelay(int delay) {
-		properties.setProperty(DELAY_KEY, Integer.toString(delay));
+		preferences.putInt(DELAY_KEY, delay);
 	}
-	
+
 	public void setDownloadPath(Path downloadPath) {
-		properties.setProperty(DOWNLOAD_PATH_KEY, downloadPath.toString());
+		preferences.put(DOWNLOAD_PATH_KEY, downloadPath.toString());
 	}
 }
