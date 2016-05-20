@@ -2,6 +2,9 @@ package com.jascvalentine.batchdownloader.download;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -28,7 +31,17 @@ public class HttpClientDownloader implements Downloader {
 
 	@Override
 	public String download(String url, Path downloadFile) throws IOException {
-		HttpGet get = new HttpGet(url);
+		// encode the URL
+		URI encoded;
+		try {
+			URL u = new URL(url);
+			encoded = new URI(u.getProtocol(), u.getAuthority(), u.getFile(),
+					u.getRef());
+		} catch (URISyntaxException e) {
+			throw new IOException(e);
+		}
+
+		HttpGet get = new HttpGet(encoded);
 		get.setConfig(config);
 
 		HttpResponse response = null;
@@ -40,7 +53,7 @@ public class HttpClientDownloader implements Downloader {
 
 			StatusLine statusLine = response.getStatusLine();
 			if (statusLine.getStatusCode() == HttpStatus.SC_OK) {
-				Files.createDirectories(downloadFile);
+				Files.createDirectories(downloadFile.getParent());
 
 				if (downloadFile.getFileName().toString().indexOf('.') == -1) {
 					// missing file extension, guess from Content Type header
